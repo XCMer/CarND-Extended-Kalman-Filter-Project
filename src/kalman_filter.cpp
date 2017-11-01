@@ -1,3 +1,5 @@
+#include <cmath>
+#include <iostream>
 #include "kalman_filter.h"
 
 using Eigen::MatrixXd;
@@ -39,8 +41,36 @@ void KalmanFilter::Update(const VectorXd &z) {
 }
 
 void KalmanFilter::UpdateEKF(const VectorXd &z) {
-  /**
-  TODO:
-    * update the state by using Extended Kalman Filter equations
-  */
+  // Calculate Jacobian
+  MatrixXd Hj(3,4);
+  float px = x_(0);
+  float py = x_(1);
+  float vx = x_(2);
+  float vy = x_(3);
+
+  float mean_square = px*px + py*py;
+
+  if (std::fabs(mean_square) < 0.001) {
+    std::cout<<"Error - Division by zero"<<std::endl;
+    return;
+  }
+
+  float root_mean_square = sqrt(mean_square);
+  float cubic_root_mean_square = pow(root_mean_square, 3);
+  float product = vx*py - vy*px;
+  float product2 = vy*px - vx*py;
+
+  Hj << px / root_mean_square, py / root_mean_square, 0, 0,
+          -py/mean_square, px/mean_square, 0, 0,
+          py*product/cubic_root_mean_square, px*product2/cubic_root_mean_square, px/root_mean_square, py/root_mean_square;
+
+  // Update
+  VectorXd y = z - Hj * x_;
+  MatrixXd Hjt = Hj.transpose();
+  MatrixXd S = Hj * P_ * Hjt + R_;
+  MatrixXd Si = S.inverse();
+  MatrixXd K = P_ * Hjt * Si;
+
+  x_ = x_ + (K * y);
+  P_ = (MatrixXd::Identity(2, 2) - K * Hj) * P_;
 }
