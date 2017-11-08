@@ -116,6 +116,20 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
         0, 0, 0         , 0,
         0, 0, 0         , 1;
   ekf_.F_ = F_;
+
+  float ax2 = 9;
+  float ay2 = 9;
+  float t2 = time_delta * time_delta;
+  float t3 = time_delta * t2;
+  float t4 = time_delta * t3;
+
+  MatrixXd Q_ = MatrixXd(4, 4);
+  Q_ << t4*ax2/4, 0       , t3*ax2/2, 0,
+        0       , t4*ay2/4, 0       , t3*ay2/2,
+        t3*ax2/2, 0       , t2*ax2  , 0,
+        0       , t3*ay2/2, 0       , t2*ay2;
+  ekf_.Q_ = Q_;
+
   ekf_.Predict();
 
   /*****************************************************************************
