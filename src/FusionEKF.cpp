@@ -54,13 +54,6 @@ FusionEKF::FusionEKF() {
            0,    0, 1000,    0,
            0,    0,    0, 1000;
   ekf_.P_ = P_;
-
-  // Process covariance. The value "9" for noise_ax and noise_ay
-  // were given in the problem statement.
-  MatrixXd Q_ = MatrixXd(2, 2);
-  Q_ << 9, 0,
-        0, 9;
-  ekf_.Q_ = Q_;
 }
 
 /**
@@ -84,11 +77,21 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
       /**
        * Convert radar from polar to cartesian coordinates and initialize state.
        */
+      float m_rho = measurement_pack.raw_measurements_[0];
+      float m_phi = measurement_pack.raw_measurements_[1];
+
+      float m_x = m_rho * cos(m_phi);
+      float m_y = m_rho * sin(m_phi);
+
+
+      ekf_.x_[0] = m_x;
+      ekf_.x_[1] = m_y;
     } else if (measurement_pack.sensor_type_ == MeasurementPackage::LASER) {
       /**
        * Initialize state.
        */
-      ekf_.x_ =
+      ekf_.x_[0] = measurement_pack.raw_measurements_[0];
+      ekf_.x_[1] = measurement_pack.raw_measurements_[1];
     }
 
     // done initializing, no need to predict or update
@@ -107,7 +110,7 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
    *    inside the Kalman filter before calling Predict.
    */
   long long int time_delta = measurement_pack.timestamp_ - previous_timestamp_;
-  MatrixXd F_ = MatrixXd(4, 4):
+  MatrixXd F_ = MatrixXd(4, 4);
   F_ << 1, 0, time_delta, 0,
         0, 1, 0         , time_delta,
         0, 0, 0         , 0,
@@ -126,9 +129,14 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
    */
 
   if (measurement_pack.sensor_type_ == MeasurementPackage::RADAR) {
-    // Radar updates
+    Tools tools = Tools();
+
+    ekf_.H_ = tools.CalculateJacobian(ekf_.x_);
+    ekf_.Update(measurement_pack.raw_measurements_);
   } else {
     // Laser updates
+    ekf_.H_ = H_laser_;
+    ekf_.Update(measurement_pack.raw_measurements_);
   }
 
   // print the output

@@ -15,6 +15,10 @@ VectorXd Tools::CalculateRMSE(const vector<VectorXd> &estimations,
   TODO:
     * Calculate the RMSE here.
   */
+  VectorXd output(4);
+  output << 0.1, 0.1, 0.1, 0.1;
+
+  return output;
 }
 
 MatrixXd Tools::CalculateJacobian(const VectorXd &x_state) {
@@ -31,7 +35,7 @@ MatrixXd Tools::CalculateJacobian(const VectorXd &x_state) {
 
   if (std::fabs(mean_square) < 0.001) {
     std::cout << "Error - Division by zero" << std::endl;
-    return nullptr;
+    return Hj;
   }
 
   float root_mean_square = sqrt(mean_square);
