@@ -43,10 +43,16 @@ void KalmanFilter::Update(const VectorXd &z) {
 void KalmanFilter::UpdateEKF(const VectorXd &z) {
   VectorXd hx_(3);
   float x_rms = sqrt(x_[0]*x_[0] + x_[1]*x_[1]);
-  hx_ << x_rms, atan(x_[1] / x_[0]), (x_[0]*x_[2] + x_[1]*x_[3]) / x_rms;
+  hx_ << x_rms, atan2(x_[1], x_[0]), (x_[0]*x_[2] + x_[1]*x_[3]) / x_rms;
 
   // Update
   VectorXd y = z - hx_;
+
+  // Reference: Normalize phi to -pi to pi after subtraction
+  // https://discussions.udacity.com/t/already-used-atan2-to-calculate-phi-in-hx-do-i-still-need-to-normalize-the-phi-in-y/242332/4
+  y[1] = atan2(sin(y[1]), cos(y[1]));
+  std::cout<<"!!!!!"<<y<<"!!!!!"<<std::endl;
+
   MatrixXd Hjt = H_.transpose();
   MatrixXd S = H_ * P_ * Hjt + R_;
   MatrixXd Si = S.inverse();

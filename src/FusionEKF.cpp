@@ -85,6 +85,8 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
 
       ekf_.x_[0] = m_x;
       ekf_.x_[1] = m_y;
+      ekf_.x_[2] = 0;
+      ekf_.x_[3] = 0;
     } else if (measurement_pack.sensor_type_ == MeasurementPackage::LASER) {
       /**
        * Initialize state.
@@ -97,6 +99,7 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
 
     // done initializing, no need to predict or update
     is_initialized_ = true;
+    previous_timestamp_ = measurement_pack.timestamp_;
     return;
   }
 
@@ -112,11 +115,12 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
    */
   float time_delta = (measurement_pack.timestamp_ - previous_timestamp_) / 1000000.0;
   previous_timestamp_ = measurement_pack.timestamp_;
+
   MatrixXd F_ = MatrixXd(4, 4);
   F_ << 1, 0, time_delta, 0,
-        0, 1, 0         , time_delta,
-        0, 0, 0         , 0,
-        0, 0, 0         , 1;
+        0, 1,          0, time_delta,
+        0, 0,          1, 0,
+        0, 0,          0, 1;
   ekf_.F_ = F_;
 
   float ax2 = 9;
