@@ -48,12 +48,11 @@ FusionEKF::FusionEKF() {
    * State-related matrices.
    */
   // State covariance
-  MatrixXd P_ = MatrixXd(4, 4);
-  P_ << 1000,    0,    0,    0,
-           0, 1000,    0,    0,
-           0,    0, 1000,    0,
-           0,    0,    0, 1000;
-  ekf_.P_ = P_;
+  ekf_.P_ = MatrixXd(4, 4);
+  ekf_.P_ << 1,    0,    0,    0,
+             0,    1,    0,    0,
+             0,    0, 1000,    0,
+             0,    0,    0, 1000;;
 }
 
 /**
@@ -92,6 +91,8 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
        */
       ekf_.x_[0] = measurement_pack.raw_measurements_[0];
       ekf_.x_[1] = measurement_pack.raw_measurements_[1];
+      ekf_.x_[2] = 0;
+      ekf_.x_[3] = 0;
     }
 
     // done initializing, no need to predict or update
@@ -109,7 +110,8 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
    * 2. Using the time_delta, we generate a state transition matrix. This is set
    *    inside the Kalman filter before calling Predict.
    */
-  long long int time_delta = measurement_pack.timestamp_ - previous_timestamp_;
+  float time_delta = (measurement_pack.timestamp_ - previous_timestamp_) / 1000000.0;
+  previous_timestamp_ = measurement_pack.timestamp_;
   MatrixXd F_ = MatrixXd(4, 4);
   F_ << 1, 0, time_delta, 0,
         0, 1, 0         , time_delta,
@@ -147,7 +149,7 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
 
     ekf_.H_ = tools.CalculateJacobian(ekf_.x_);
     ekf_.R_ = R_radar_;
-    ekf_.Update(measurement_pack.raw_measurements_);
+    ekf_.UpdateEKF(measurement_pack.raw_measurements_);
   } else {
     // Laser updates
     ekf_.H_ = H_laser_;
